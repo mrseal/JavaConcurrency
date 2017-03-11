@@ -1,4 +1,4 @@
-package executor.future.callable.runnable;
+package parallel.computing.executor.callable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,44 +9,26 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class BigArraySumCallable {
+import parallel.computing.Sum;
 
-    private static final int THREAD_POOL_SIZE = 100;
-    private static final int THREAD_NUM = 100;
+public class SumExecutorCallable implements Sum {
 
-    public static void main(final String[] args) {
-        final int[] array = prepareArray(500000000);
+    private static final int THREAD_POOL_SIZE = 10;
+    private static final int THREAD_NUM = 10;
 
-        long start = System.currentTimeMillis();
-        long sum = 0;
-        for (final int value : array) {
-            sum += value;
-        }
-        final long singleTTimeCost = System.currentTimeMillis() - start;
+    private final int[] array;
 
-        start = System.currentTimeMillis();
-        final long mtSum = sum(array);
-        final long tPoolTimeCost = System.currentTimeMillis() - start;
-
-        System.out.println("Total: " + mtSum + " (Should be " + sum + ")");
-        System.out.println("Single Thread: " + singleTTimeCost + "ms");
-        System.out.println("Thread Pool: " + tPoolTimeCost + "ms");
+    public SumExecutorCallable(final int[] array) {
+        this.array = array;
     }
 
-    private static int[] prepareArray(final int length) {
-        final int[] array = new int[length];
-        for (int i = 0; i < length; i++) {
-            array[i] = (int) (Math.random() * 20);
-        }
-        return array;
-    }
-
-    public static Long sum(final int[] array) {
+    @Override
+    public Long sum() {
         final List<Future<Long>> results = Collections.synchronizedList(new ArrayList<>());
         Long sum = 0l;
 
         final int arraySize = array.length;
-        final int blockSize = Math.round((float) array.length / (float) THREAD_NUM);
+        final int blockSize = Math.round((float) array.length / THREAD_NUM);
 
         final ExecutorService exec = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         int i = 0;
@@ -68,6 +50,11 @@ public class BigArraySumCallable {
         }
         exec.shutdown();
         return sum;
+    }
+
+    @Override
+    public String getImpl() {
+        return "ExecutorCallable";
     }
 
 }
