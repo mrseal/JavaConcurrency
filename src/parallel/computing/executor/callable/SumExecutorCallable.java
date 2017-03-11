@@ -26,18 +26,17 @@ public class SumExecutorCallable implements Sum {
     public Long sum() {
         final List<Future<Long>> results = Collections.synchronizedList(new ArrayList<>());
         Long sum = 0l;
-
+        final ExecutorService exec = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         final int arraySize = array.length;
         final int blockSize = Math.round((float) array.length / THREAD_NUM);
 
-        final ExecutorService exec = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         int i = 0;
         while (i < arraySize - blockSize) {
-            final Future<Long> result = exec.submit(new SumCallable(array, i, i + blockSize - 1));
+            final Future<Long> result = exec.submit(new SumCallable(i, i + blockSize - 1));
             results.add(result);
             i += blockSize;
         }
-        results.add(exec.submit(new SumCallable(array, i, array.length - 1)));
+        results.add(exec.submit(new SumCallable(i, array.length - 1)));
 
         for (final Future<Long> result : results) {
             try {
@@ -57,28 +56,27 @@ public class SumExecutorCallable implements Sum {
         return "ExecutorCallable";
     }
 
-}
+    class SumCallable implements Callable<Long> {
+        int start;
+        int end;
 
-class SumCallable implements Callable<Long> {
-    int[] array;
-    int start;
-    int end;
-
-    public SumCallable(final int[] array, final int start, final int end) {
-        this.array = array;
-        this.start = start;
-        this.end = end;
-    }
-
-    @Override
-    public Long call() throws Exception {
-        Long sum = 0l;
-        for (int i = start; i <= end; i++) {
-            sum += array[i];
+        public SumCallable(final int start, final int end) {
+            this.start = start;
+            this.end = end;
         }
-        // System.out.println(Thread.currentThread().getName() + " calculated "
-        // + start + " - " + end + ": " + sum);
-        return sum;
+
+        @Override
+        public Long call() throws Exception {
+            long sum = 0l;
+            for (int i = start; i <= end; i++) {
+                sum += array[i];
+            }
+            // System.out.println(Thread.currentThread().getName() +
+            // " calculated "
+            // + start + " - " + end + ": " + sum);
+            return sum;
+        }
+
     }
 
 }
